@@ -86,3 +86,9 @@ HEALTH_BAR_WIDTH = 200
 HEALTH_BAR_HEIGHT = 20
 HEALTH_BAR_X = 10
 HEALTH_BAR_Y = 10
+
+# =============================================================================
+# ASSETS
+# =============================================================================
+import os
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets", "sprites")

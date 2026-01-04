@@ -24,40 +24,51 @@ class CollisionSystem:
 
     def _handle_player_platform_collision(self, player, platforms) -> None:
         """
-        Resolve player-platform collisions for standing and blocking.
+        Resolve player-platform collisions using separate X and Y passes.
         """
-        # Store original position for collision resolution
-        original_y = player.rect.y
-
         # Reset ground state
         player.on_ground = False
 
-        # Check each platform
-        for platform in platforms:
-            if not player.rect.colliderect(platform.rect):
-                continue
+        # Get player's feet position for ground check
+        feet_rect = pygame.Rect(player.rect.x + 5, player.rect.bottom, player.rect.width - 10, 5)
 
-            # Vertical collision (landing or hitting head)
-            if player.velocity.y > 0:  # Falling
-                # Check if player was above platform last frame
-                if original_y + player.rect.height <= platform.rect.top + player.velocity.y * 0.1:
-                    player.rect.bottom = platform.rect.top
-                    player.velocity.y = 0
-                    player.on_ground = True
-            elif player.velocity.y < 0:  # Jumping up
-                if player.rect.top < platform.rect.bottom:
+        # Check if standing on any platform
+        for platform in platforms:
+            if feet_rect.colliderect(platform.rect) and player.velocity.y >= 0:
+                # Player is on top of this platform
+                player.rect.bottom = platform.rect.top
+                player.velocity.y = 0
+                player.on_ground = True
+                break
+
+        # Handle horizontal collisions (walls)
+        for platform in platforms:
+            if player.rect.colliderect(platform.rect):
+                # Determine overlap
+                overlap_left = player.rect.right - platform.rect.left
+                overlap_right = platform.rect.right - player.rect.left
+                overlap_top = player.rect.bottom - platform.rect.top
+                overlap_bottom = platform.rect.bottom - player.rect.top
+
+                # Find smallest horizontal overlap
+                min_horizontal = min(overlap_left, overlap_right)
+                min_vertical = min(overlap_top, overlap_bottom)
+
+                # Only resolve horizontal if it's a side collision (not standing on top)
+                if min_horizontal < min_vertical and not player.on_ground:
+                    if overlap_left < overlap_right:
+                        player.rect.right = platform.rect.left
+                    else:
+                        player.rect.left = platform.rect.right
+
+        # Handle hitting head on platform from below
+        if player.velocity.y < 0:
+            head_rect = pygame.Rect(player.rect.x + 5, player.rect.top - 2, player.rect.width - 10, 4)
+            for platform in platforms:
+                if head_rect.colliderect(platform.rect):
                     player.rect.top = platform.rect.bottom
                     player.velocity.y = 0
-
-        # Horizontal collision (after vertical is resolved)
-        for platform in platforms:
-            if not player.rect.colliderect(platform.rect):
-                continue
-
-            if player.velocity.x > 0:  # Moving right
-                player.rect.right = platform.rect.left
-            elif player.velocity.x < 0:  # Moving left
-                player.rect.left = platform.rect.right
+                    break
 
     def _handle_bullet_enemy_collision(self, bullets, enemies) -> None:
         """

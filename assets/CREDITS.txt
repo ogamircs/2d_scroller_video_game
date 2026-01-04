@@ -1,0 +1,10 @@
+Sprite Assets Credit
+====================
+
+Sprites from "Platformer Art Deluxe" by Kenney
+https://www.kenney.nl/assets/platformer-art-deluxe
+
+License: CC0 (Creative Commons Zero) - Public Domain
+https://creativecommons.org/publicdomain/zero/1.0/
+
+These assets are free to use without attribution, but credit is appreciated!

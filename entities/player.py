@@ -2,12 +2,12 @@
 Player - Main player character with movement, jumping, and shooting.
 """
 
+import os
 import pygame
 from config import (
-    PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_COLOR,
     PLAYER_SPEED, JUMP_VELOCITY, GRAVITY, TERMINAL_VELOCITY,
     PLAYER_MAX_HEALTH, PLAYER_INVINCIBILITY_TIME,
-    SHOOT_COOLDOWN, LEVEL_WIDTH
+    SHOOT_COOLDOWN, LEVEL_WIDTH, ASSETS_DIR
 )
 from core.event_manager import EventManager, GameEvent
 from .bullet import Bullet
@@ -21,8 +21,23 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x: int, y: int, event_manager: EventManager):
         super().__init__()
 
-        self.image = pygame.Surface((PLAYER_WIDTH, PLAYER_HEIGHT))
-        self.image.fill(PLAYER_COLOR)
+        # Load sprites
+        self.sprites = {
+            'stand': self._load_sprite('player_stand.png'),
+            'jump': self._load_sprite('player_jump.png'),
+            'walk': [
+                self._load_sprite('player_walk1.png'),
+                self._load_sprite('player_walk2.png'),
+            ]
+        }
+
+        # Animation
+        self.animation_timer = 0
+        self.animation_frame = 0
+        self.animation_speed = 0.1  # seconds per frame
+
+        # Set initial image
+        self.image = self.sprites['stand']
         self.rect = self.image.get_rect(topleft=(x, y))
 
         self.event_manager = event_manager
@@ -43,6 +58,19 @@ class Player(pygame.sprite.Sprite):
         # Shooting
         self.shoot_cooldown = 0
         self.bullet_group = None  # Set by PlayingState
+
+    def _load_sprite(self, filename: str) -> pygame.Surface:
+        """Load a sprite image and scale it appropriately."""
+        path = os.path.join(ASSETS_DIR, filename)
+        try:
+            image = pygame.image.load(path).convert_alpha()
+            # Scale to reasonable size (original Kenney sprites are 70x70ish)
+            return pygame.transform.scale(image, (48, 48))
+        except pygame.error:
+            # Fallback to colored rectangle
+            surface = pygame.Surface((48, 48))
+            surface.fill((0, 200, 100))
+            return surface
 
     def handle_input(self, keys) -> None:
         """Process keyboard input for movement."""
@@ -93,6 +121,27 @@ class Player(pygame.sprite.Sprite):
             self.health = 0
             self.event_manager.emit(GameEvent.PLAYER_DIED)
 
+    def _update_animation(self, dt: float) -> None:
+        """Update sprite animation based on state."""
+        # Determine which sprite to use
+        if not self.on_ground:
+            sprite = self.sprites['jump']
+        elif abs(self.velocity.x) > 0:
+            # Walking animation
+            self.animation_timer += dt
+            if self.animation_timer >= self.animation_speed:
+                self.animation_timer = 0
+                self.animation_frame = (self.animation_frame + 1) % len(self.sprites['walk'])
+            sprite = self.sprites['walk'][self.animation_frame]
+        else:
+            sprite = self.sprites['stand']
+
+        # Flip sprite based on direction
+        if self.facing_right:
+            self.image = sprite
+        else:
+            self.image = pygame.transform.flip(sprite, True, False)
+
     def update(self, dt: float) -> None:
         """Update player physics and timers."""
         # Apply gravity
@@ -113,6 +162,9 @@ class Player(pygame.sprite.Sprite):
         # Update shoot cooldown
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= dt
+
+        # Update animation
+        self._update_animation(dt)
 
         # Update invincibility
         if self.invincible:

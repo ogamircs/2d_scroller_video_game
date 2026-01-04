@@ -31,8 +31,8 @@ class PlayingState:
         self.enemies = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
 
-        # Create player
-        self.player = Player(100, SCREEN_HEIGHT - 150, game.event_manager)
+        # Create player (spawn above ground)
+        self.player = Player(100, SCREEN_HEIGHT - 140, game.event_manager)
         self.player.bullet_group = self.bullets
         self.all_sprites.add(self.player)
 
@@ -59,26 +59,27 @@ class PlayingState:
 
     def _create_level(self) -> None:
         """Create platforms for the level."""
-        # Ground
-        ground = Platform(0, SCREEN_HEIGHT - 40, LEVEL_WIDTH, 40)
+        # Ground (spans entire level)
+        ground = Platform(0, SCREEN_HEIGHT - 70, LEVEL_WIDTH, 70)
         self.platforms.add(ground)
         self.all_sprites.add(ground)
 
-        # Floating platforms
+        # Floating platforms (adjusted for 70px tile height)
+        # Format: (x, y, width, height) - width determines number of tiles
         platform_data = [
-            (200, 480, 150, 20),
-            (450, 400, 150, 20),
-            (700, 320, 150, 20),
-            (950, 400, 150, 20),
-            (1200, 480, 150, 20),
-            (1400, 350, 200, 20),
-            (1700, 420, 150, 20),
-            (100, 350, 100, 20),
-            (350, 250, 120, 20),
-            (600, 180, 100, 20),
-            (900, 220, 150, 20),
-            (1100, 280, 120, 20),
-            (1500, 200, 150, 20),
+            (200, 430, 210, 70),
+            (500, 360, 210, 70),
+            (800, 290, 140, 70),
+            (1050, 360, 210, 70),
+            (1350, 430, 210, 70),
+            (1600, 320, 280, 70),
+            (100, 290, 140, 70),
+            (350, 200, 140, 70),
+            (650, 130, 140, 70),
+            (950, 180, 210, 70),
+            (1250, 240, 140, 70),
+            (1500, 150, 210, 70),
+            (1800, 380, 140, 70),
         ]
 
         for x, y, w, h in platform_data:

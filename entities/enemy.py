@@ -2,10 +2,10 @@
 Enemy - Flying enemy that tracks toward the player.
 """
 
+import os
 import pygame
 from config import (
-    ENEMY_WIDTH, ENEMY_HEIGHT, ENEMY_COLOR,
-    ENEMY_SPEED, ENEMY_HEALTH, ENEMY_DAMAGE
+    ENEMY_SPEED, ENEMY_HEALTH, ENEMY_DAMAGE, ASSETS_DIR
 )
 from core.event_manager import EventManager, GameEvent
 
@@ -24,8 +24,17 @@ class FlyingEnemy(pygame.sprite.Sprite):
         """
         super().__init__()
 
-        self.image = pygame.Surface((ENEMY_WIDTH, ENEMY_HEIGHT))
-        self.image.fill(ENEMY_COLOR)
+        # Load sprites
+        self.sprites = {
+            'idle': self._load_sprite('enemy.png'),
+            'fly': self._load_sprite('enemy_fly.png'),
+        }
+
+        # Animation
+        self.animation_timer = 0
+        self.animation_speed = 0.15
+
+        self.image = self.sprites['idle']
         self.rect = self.image.get_rect(center=(x, y))
 
         self.player = player
@@ -37,6 +46,18 @@ class FlyingEnemy(pygame.sprite.Sprite):
 
         self.velocity = pygame.math.Vector2(0, 0)
         self.facing_right = False
+
+    def _load_sprite(self, filename: str) -> pygame.Surface:
+        """Load a sprite image and scale it appropriately."""
+        path = os.path.join(ASSETS_DIR, filename)
+        try:
+            image = pygame.image.load(path).convert_alpha()
+            return pygame.transform.scale(image, (40, 40))
+        except pygame.error:
+            # Fallback to colored rectangle
+            surface = pygame.Surface((40, 40))
+            surface.fill((200, 50, 50))
+            return surface
 
     def update(self, dt: float) -> None:
         """Move toward the player."""
@@ -59,6 +80,22 @@ class FlyingEnemy(pygame.sprite.Sprite):
 
         # Track facing direction
         self.facing_right = dx > 0
+
+        # Animate
+        self.animation_timer += dt
+        if self.animation_timer >= self.animation_speed:
+            self.animation_timer = 0
+            # Toggle between idle and fly
+            if self.image == self.sprites['idle']:
+                sprite = self.sprites['fly']
+            else:
+                sprite = self.sprites['idle']
+
+            # Flip based on direction
+            if self.facing_right:
+                self.image = sprite
+            else:
+                self.image = pygame.transform.flip(sprite, True, False)
 
     def take_damage(self, amount: int) -> None:
         """Take damage and check for death."""
